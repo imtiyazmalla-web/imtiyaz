@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Share My Location</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 36px 28px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+    }
+
+    .icon {
+      font-size: 56px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    .notice {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #0369a1;
+      margin-bottom: 24px;
+      text-align: left;
+      line-height: 1.5;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn:hover { opacity: .9; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    .btn-copy {
+      background: #f1f5f9;
+      color: #334155;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .btn-maps {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: #fff;
+      font-size: 14px;
+    }
+
+    /* result panel */
+    #result {
+      display: none;
+      margin-top: 8px;
+    }
+
+    .coords-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .coords-box label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .coords-box .value {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1e293b;
+      word-break: break-all;
+    }
+    .coords-box .accuracy {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    .copied-badge {
+      display: none;
+      background: #dcfce7;
+      color: #166534;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    #error-msg {
+      display: none;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 10px;
+      padding: 14px;
+      color: #dc2626;
+      font-size: 14px;
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+
+    .spinner {
+      display: none;
+      margin: 16px auto 0;
+      width: 32px;
+      height: 32px;
+      border: 3px solid #e2e8f0;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .footer {
+      margin-top: 28px;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">📍</div>
+  <h1>Share My Location</h1>
+  <p class="subtitle">Tap the button below to share your current location as a Google Maps link.</p>
+
+  <div class="notice">
+    🔒 Your location is <strong>never stored</strong> on any server. It stays in your browser and is only shared when you choose to copy or send the link.
+  </div>
+
+  <button class="btn btn-primary" id="shareBtn" onclick="getLocation()">
+    📡 Get My Location
+  </button>
+
+  <div class="spinner" id="spinner"></div>
+  <div id="error-msg"></div>
+
+  <div id="result">
+    <div class="coords-box">
+      <label>Coordinates</label>
+      <div class="value" id="coordsText">—</div>
+      <div class="accuracy" id="accuracyText"></div>
+    </div>
+
+    <div class="copied-badge" id="copiedBadge">✓ Link copied to clipboard!</div>
+
+    <button class="btn btn-copy" id="copyBtn" onclick="copyLink()">
+      📋 Copy Google Maps Link
+    </button>
+
+    <a class="btn btn-maps" id="mapsBtn" href="#" target="_blank" rel="noopener">
+      🗺️ Open in Google Maps
+    </a>
+  </div>
+
+  <div class="footer">Works on any device · No app required · Location access needed</div>
+</div>
+
+<script>
+  let mapsUrl = '';
+
+  function getLocation() {
+    const btn = document.getElementById('shareBtn');
+    const spinner = document.getElementById('spinner');
+    const errBox = document.getElementById('error-msg');
+
+    btn.disabled = true;
+    btn.textContent = 'Locating…';
+    spinner.style.display = 'block';
+    errBox.style.display = 'none';
+    document.getElementById('result').style.display = 'none';
+
+    if (!navigator.geolocation) {
+      showError('Geolocation is not supported by your browser.');
+      resetBtn();
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(onSuccess, onError, {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    });
+  }
+
+  function onSuccess(pos) {
+    const lat = pos.coords.latitude.toFixed(6);
+    const lng = pos.coords.longitude.toFixed(6);
+    const acc = Math.round(pos.coords.accuracy);
+
+    mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+
+    document.getElementById('coordsText').textContent = `${lat}, ${lng}`;
+    document.getElementById('accuracyText').textContent = `Accuracy: ±${acc} meters`;
+    document.getElementById('mapsBtn').href = mapsUrl;
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('shareBtn').style.display = 'none';
+  }
+
+  function onError(err) {
+    const messages = {
+      1: 'Location access was denied. Please allow location access in your browser settings and try again.',
+      2: 'Location unavailable. Please check your device settings or try in an area with better signal.',
+      3: 'Location request timed out. Please try again.'
+    };
+    showError(messages[err.code] || 'An unknown error occurred.');
+    resetBtn();
+  }
+
+  function resetBtn() {
+    const btn = document.getElementById('shareBtn');
+    btn.disabled = false;
+    btn.innerHTML = '📡 Get My Location';
+    document.getElementById('spinner').style.display = 'none';
+  }
+
+  function showError(msg) {
+    const box = document.getElementById('error-msg');
+    box.textContent = msg;
+    box.style.display = 'block';
+  }
+
+  function copyLink() {
+    if (!mapsUrl) return;
+    navigator.clipboard.writeText(mapsUrl).then(() => {
+      const badge = document.getElementById('copiedBadge');
+      badge.style.display = 'block';
+      setTimeout(() => badge.style.display = 'none', 3000);
+    }).catch(() => {
+      prompt('Copy this link:', mapsUrl);
+    });
+  }
+</script>
+</body>
+</html>
