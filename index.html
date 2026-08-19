@@ -220,8 +220,8 @@
     document.getElementById('spinner').style.display = 'none';
     document.getElementById('shareBtn').style.display = 'none';
 
-    // Auto-open WhatsApp immediately
-    window.open(waUrl, '_blank');
+    // Redirect to WhatsApp (works in async context unlike window.open)
+    window.location.href = waUrl;
   }
 
   function onError(err) {
