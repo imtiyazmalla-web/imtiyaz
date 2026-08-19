@@ -210,11 +210,8 @@
     const lng = pos.coords.longitude.toFixed(6);
     const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
 
-    const msg = encodeURIComponent(
-      `📍 My current location:\n${mapsUrl}\n\nCoordinates: ${lat}, ${lng}`
-    );
-
-    const waUrl = `https://wa.me/${PARENT_WA}?text=${msg}`;
+    const text = `My location: ${mapsUrl}`;
+    const waUrl = `https://api.whatsapp.com/send?phone=${PARENT_WA}&text=${encodeURIComponent(text)}`;
 
     document.getElementById('waBtn').href = waUrl;
     document.getElementById('result').style.display = 'block';
